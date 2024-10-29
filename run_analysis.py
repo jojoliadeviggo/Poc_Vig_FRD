@@ -3,7 +3,7 @@ import os
 import traceback
 
 # Token direct
-hf_token = "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"
+hf_token = os.getenv("HF-TOKEN")
 
 try:
     print("=== Début de l'analyse ===")
