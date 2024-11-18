@@ -100,6 +100,10 @@ class PPTAnalyzer:
     def analyze(self, ppt_path):
         """Main analysis function"""
         try:
+            # Obtenir et afficher le chemin absolu
+            abs_path = os.path.abspath(ppt_path)
+            print(f"\nLe document analysé est situé ici : {abs_path}")
+
             text = self.extract_text(ppt_path)
             print("\nExtracted text:")
             print(text)     
@@ -127,5 +131,5 @@ class PPTAnalyzer:
 # Example usage
 if __name__ == "__main__":
     analyzer = PPTAnalyzer()
-    result = analyzer.analyze("LIAaudeladubuzz.pptx")
+    result = analyzer.analyze("FakePropal.pptx")
     print("\nAnalysis results:", result)
