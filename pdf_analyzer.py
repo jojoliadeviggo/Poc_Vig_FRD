@@ -200,6 +200,7 @@ class PDFAnalyzer:
             
                 if not text.strip():
                     return {
+                        "title": "Sans titre",
                         "text_length": 0,
                         "keywords": [],
                         "summary": "",
@@ -215,11 +216,12 @@ class PDFAnalyzer:
                 table_of_contents = self.extract_table_of_contents(text)
 
                 return {
+                    "title": title,
                     "text_length": len(text.split()),
                     "keywords": keywords,
                     "summary": summary,
                     "table_of_contents": table_of_contents,
-                    "extracted_text": text[:200] + "..."  # Preview des 200 premiers caractères
+                    # "extracted_text": text[:200] + "..."  # Preview des 200 premiers caractères
                 }
 
             except Exception as e:
