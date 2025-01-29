@@ -34,6 +34,22 @@ class PPTAnalyzer:
             print(f"Error extracting text: {str(e)}")
             raise
 
+    def extract_title(self, ppt_path):
+        """Extract title from the first slide of PowerPoint file"""
+        try:
+            prs = Presentation(ppt_path)
+            if prs.slides:
+                first_slide = prs.slides[0]
+                for shape in first_slide.shapes:
+                    if hasattr(shape, "text"):
+                        title = shape.text.strip()
+                        if title:
+                            return title
+            return "Sans titre"
+        except Exception as e:
+            print(f"Error extracting title: {str(e)}")
+            return "Sans titre"
+
     def extract_keywords(self, text):
         """Extract keywords from text using KeyBERT"""
         print("\nExtracting keywords...")
@@ -136,10 +152,13 @@ class PPTAnalyzer:
             abs_path = os.path.abspath(ppt_path)
             print(f"\nLe document analysé est situé ici : {abs_path}")
 
-            text = self.extract_text(ppt_path) 
+            text = self.extract_text(ppt_path)
+            title = self.extract_title(ppt_path) 
+
             if not text.strip():
                 print("No text found in presentation")
                 return {
+                    "title": "Sans titre",
                     "text_length": 0,
                     "keywords": [],
                     "summary" : "",
@@ -150,6 +169,7 @@ class PPTAnalyzer:
             summary = self.generate_summary(text, keywords)
 
             return {
+                "title": title,
                 "text_length": len(text.split()),
                 "keywords": keywords,
                 "summary" : summary,
