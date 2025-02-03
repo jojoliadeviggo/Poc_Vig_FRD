@@ -5,6 +5,7 @@ import torch
 from dotenv import load_dotenv
 import os
 from mistralai import Mistral
+import time
 
 load_dotenv()  # charger les variables d'environnement depuis .env
 
@@ -33,6 +34,22 @@ class PPTAnalyzer:
             print(f"Error extracting text: {str(e)}")
             raise
 
+    def extract_title(self, ppt_path):
+        """Extract title from the first slide of PowerPoint file"""
+        try:
+            prs = Presentation(ppt_path)
+            if prs.slides:
+                first_slide = prs.slides[0]
+                for shape in first_slide.shapes:
+                    if hasattr(shape, "text"):
+                        title = shape.text.strip()
+                        if title:
+                            return title
+            return "Sans titre"
+        except Exception as e:
+            print(f"Error extracting title: {str(e)}")
+            return "Sans titre"
+
     def extract_keywords(self, text):
         """Extract keywords from text using KeyBERT"""
         print("\nExtracting keywords...")
@@ -58,6 +75,7 @@ class PPTAnalyzer:
     def generate_summary(self, text, keywords):
         print("\nGenerating summary...")
         try:
+            time.sleep(1)  # Pause d'1 seconde avant l'appel API
             prompt = f"""Voici un texte extrait d'une présentation PowerPoint.
             Les mots-clés importants sont : {', '.join(keywords)}
             
@@ -96,6 +114,36 @@ class PPTAnalyzer:
         except Exception as e:
             print(f"Error generating summary: {str(e)}")
             return ""
+    
+    def extract_table_of_contents(self, text):
+        print("\nExtracting/generating table of contents...")
+        try:
+            time.sleep(1)  # Pause d'1 seconde avant l'appel API
+            messages = [
+                {
+                    "role": "user",
+                    "content": f"""Analyse ce texte extrait d'une présentation PowerPoint et:
+                    1. Si tu trouves des slides titrées 'Sommaire', 'Plan' ou 'Table des matières', extrais leur contenu.
+                    2. Sinon, si tu identifies une structure claire avec des sections marquées par des titres de slides, génère un sommaire basé sur cette structure.
+                    3. Si aucune structure claire n'est identifiable, retourne une chaîne vide.
+
+                    Texte : {text[:2000]}
+
+                    Important : Ne génère pas de sommaire artificiel sans structure claire."""
+                }
+            ]
+
+            response = self.mistral_client.chat.complete(
+                model="mistral-tiny",
+                messages=messages,
+            )
+            
+            toc = response.choices[0].message.content
+            return toc if toc and not toc.lower().startswith("le texte ne") else ""
+            
+        except Exception as e:
+            print(f"Error extracting table of contents: {str(e)}")
+            return ""
 
     def analyze(self, ppt_path):
         """Main analysis function"""
@@ -105,23 +153,27 @@ class PPTAnalyzer:
             print(f"\nLe document analysé est situé ici : {abs_path}")
 
             text = self.extract_text(ppt_path)
-            print("\nExtracted text:")
-            print(text)     
+            title = self.extract_title(ppt_path) 
+
             if not text.strip():
                 print("No text found in presentation")
                 return {
+                    "title": "Sans titre",
                     "text_length": 0,
                     "keywords": [],
-                    "summary" : ""
+                    "summary" : "",
+                    "table_of_contents": "",
                 }
             
             keywords = self.extract_keywords(text)
             summary = self.generate_summary(text, keywords)
 
             return {
+                "title": title,
                 "text_length": len(text.split()),
                 "keywords": keywords,
-                "summary" : summary
+                "summary" : summary,
+                "table_of_contents": self.extract_table_of_contents(text)  
             }
             
         except Exception as e:
@@ -131,5 +183,6 @@ class PPTAnalyzer:
 # Example usage
 if __name__ == "__main__":
     analyzer = PPTAnalyzer()
-    result = analyzer.analyze("FakePropal.pptx")
+    file = r"C:\Users\Joséphine Balland\SCriptsfaitmaison\POC_FRD_2\Charte IA_VF_-Copie.pptx"
+    result = analyzer.analyze(file)
     print("\nAnalysis results:", result)
