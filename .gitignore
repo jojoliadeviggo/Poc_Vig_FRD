@@ -33,3 +33,6 @@ secrets.py
 *_token*
 *_key*
 credentials.*
+
+venv/
+*.pdf
